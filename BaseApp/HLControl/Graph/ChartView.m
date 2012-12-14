@@ -249,6 +249,19 @@ static NSInteger sortByMaxValue(id a,id b,void *context){
     return [slices count];
 }
 
+-(NSInteger)numberOfSectionsInChartView:(HLChartView *)chartView type:(NSString *)type
+{
+    NSInteger index=0;
+    for (NSDictionary *dic in slices) {
+        if ([[dic objectForKey:@"type"] isEqualToString:type]) {
+            index++;
+        }
+    }
+    return index;
+}
+
+
+
 -(float)maxVerticalValueInChartView:(HLChartView *)chartView filter:(NSMutableArray *)aDict
 {
     [self filterValues:aDict];
@@ -288,7 +301,18 @@ static NSInteger sortByMaxValue(id a,id b,void *context){
     NSDictionary *dic=(NSDictionary*)[slices objectAtIndex:section];
     if ([dic isKindOfClass:[NSDictionary class]]) {
         NSArray *vs=(NSArray*)[dic objectForKey:@"values"];
-//        NSLog(@"valueForChartViewAtIndex %d  %d  %f",index,section,[[vs objectAtIndex:index] floatValue]);
+        NSLog(@"valueForChartViewAtIndex %d  %d  %f",index,section,[[vs objectAtIndex:index] floatValue]);
+        return [[vs objectAtIndex:index] floatValue];
+    }
+    return 0.0;
+}
+
+-(float)chartView:(HLChartView *)chartView value2ForChartViewAtIndex:(NSInteger)index section:(NSInteger)section
+{
+    NSDictionary *dic=(NSDictionary*)[slices objectAtIndex:section];
+    if ([dic isKindOfClass:[NSDictionary class]]) {
+        NSArray *vs=(NSArray*)[dic objectForKey:@"values2"];
+        NSLog(@"value2ForChartViewAtIndex %d  %d  %f",index,section,[[vs objectAtIndex:index] floatValue]);
         return [[vs objectAtIndex:index] floatValue];
     }
     return 0.0;
@@ -299,7 +323,7 @@ static NSInteger sortByMaxValue(id a,id b,void *context){
     NSDictionary *dic=(NSDictionary*)[slices objectAtIndex:section];
     if ([[dic objectForKey:@"type"] isEqualToString:type]) {
         NSArray *vs=(NSArray*)[dic objectForKey:@"values"];
-        NSLog(@"valueForChartViewAtIndex %d  %d %@ %f",index,section,type,[[vs objectAtIndex:index] floatValue]);
+//        NSLog(@"valueForChartViewAtIndex %d  %d %@ %f",index,section,type,[[vs objectAtIndex:index] floatValue]);
         return [[vs objectAtIndex:index] floatValue];
     }
     return 0.0;

@@ -45,20 +45,25 @@ typedef enum{
 
 //几条线或几组
 -(NSInteger)numberOfSectionsInChartView:(HLChartView*)chartView;
+
+
 //每条线上点数或每组数量
 -(NSInteger)chartView:(HLChartView *)chartView numberOfRowsInSection:(NSInteger)section;
 //每条线标签内容
 -(NSString*)chartView:(HLChartView*)chartView legendOfTitleInSection:(NSInteger)section;
 //每条线 各节点值 
 -(float)chartView:(HLChartView*)chartView valueForChartViewAtIndex:(NSInteger)index section:(NSInteger)section;
+-(float)chartView:(HLChartView *)chartView value2ForChartViewAtIndex:(NSInteger)index section:(NSInteger)section;
 //每条记录 类型  值为  line  或bar
 -(NSString*)chartView:(HLChartView*)chartView typeForChartView:(NSInteger)index;
--(float)chartView:(HLChartView *)chartView valueForChartViewAtIndex:(NSInteger)index section:(NSInteger)section type:(NSString*)type;
 
 
 -(float)maxVerticalValueInChartView:(HLChartView*)chartView filter:(NSMutableArray*)aDict;
 //根据类型取最大值
+-(NSInteger)numberOfSectionsInChartView:(HLChartView*)chartView type:(NSString*)type;
 -(float)maxVerticalValueInChartView:(HLChartView*)chartView filter:(NSMutableArray*)aDict type:(NSString*)type;
+-(float)chartView:(HLChartView *)chartView valueForChartViewAtIndex:(NSInteger)index section:(NSInteger)section type:(NSString*)type;
+
 
 -(float)minVerticalValueInChartView:(HLChartView*)chartView filter:(NSMutableArray*)aDict;
 -(float)maxHorizontalValueInChartView:(HLChartView*)chartView;

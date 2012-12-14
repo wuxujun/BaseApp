@@ -19,6 +19,7 @@ NSString    *const  kHLLineLayerLastIndex=@"lastIndex";
 NSString    *const  kHLChartViewItemName=@"itemName";
 NSString    *const  kHLChartViewScaleX=@"scaleX";
 NSString    *const  kHLChartViewItemValue=@"itemValue";
+NSString    *const  kHLChartViewItemNameValue=@"itemNameValue";  //点击显示内容
 NSString    *const  kHLChartViewItemIndex=@"itemIndex";
 NSString    *const  kHLChartViewSectionNums=@"sectionNums";
 NSString    *const  kHLChartViewPointX=@"pointX";
@@ -378,10 +379,7 @@ static CGPathRef  CGPathCreateLine(CGPoint startPoint,CGPoint endPoint)
     if (_dataSource) {
         //共几条线
         [self drawHorizontalLines];
- 
-//        NSString* deviceType = [UIDevice currentDevice].model;
-//        NSLog(@"=======%@",deviceType);
-        
+
         NSUInteger lineCount=[_dataSource numberOfSectionsInChartView:self];
         
         for (int index=0;index<lineCount;index++){
@@ -416,8 +414,14 @@ static CGPathRef  CGPathCreateLine(CGPoint startPoint,CGPoint endPoint)
             CGMutablePathRef path=CGPathCreateMutable();
             
             for (int points=0; points<numberOfRows; points++) {
-//                NSLog(@"++++++++%d %d",index,points);
-                CGPoint p=[self calculateForVertivalHeight:[self.dataSource chartView:self valueForChartViewAtIndex:points section:index] withNumberOfSection:index atRowIndex:points];
+                float pValue=[self.dataSource chartView:self valueForChartViewAtIndex:points section:index];
+                float pValue2=[self.dataSource chartView:self value2ForChartViewAtIndex:points section:index];
+                
+                NSString    *pLegend=[_dataSource chartView:self legendOfTitleInSection:index];
+                NSString    *pXTitle=[_dataSource chartView:self scaleXTitleForChartView:points];
+                UIColor     *pColor=[_dataSource chartView:self colorForChartView:index];
+                
+                CGPoint p=[self calculateForVertivalHeight:pValue withNumberOfSection:index atRowIndex:points];
                 if (points==0) {
                     CGPathMoveToPoint(path, NULL, p.x, p.y);
                 }
@@ -433,18 +437,23 @@ static CGPathRef  CGPathCreateLine(CGPoint startPoint,CGPoint endPoint)
                 }
                 CAShapeLayer *pointLayer=[CAShapeLayer layer];
                 [pointLayer setContentsScale:[UIScreen mainScreen].scale];
-                [pointLayer setFillColor:[_dataSource chartView:self colorForChartView:index].CGColor];
+                [pointLayer setFillColor:pColor.CGColor];
                 [pointLayer setPosition:CGPointMake(0, 0)];
                 [pointLayer setPath:pointPath.CGPath];
-                [pointLayer setStrokeColor:[_dataSource chartView:self colorForChartView:index].CGColor];
+                [pointLayer setStrokeColor:pColor.CGColor];
                 [pointLayer setLineWidth:2.0];
                 
-                [pointLayer setValue:[NSNumber numberWithDouble:[_dataSource chartView:self valueForChartViewAtIndex:points section:index]] forKey:kHLChartViewItemValue];
+                [pointLayer setValue:[NSNumber numberWithFloat:pValue] forKey:kHLChartViewItemValue];
+                NSString  *itemNameValue=[NSString stringWithFormat:@"%@:%.0f",pLegend,pValue];
+                if (pValue2>0) {
+                    itemNameValue=[NSString stringWithFormat:@"%@:%.2f%% [%.0f]",pLegend,pValue,pValue2];
+                }
+                [pointLayer setValue:itemNameValue forKey:kHLChartViewItemNameValue];
                 [pointLayer setValue:[NSNumber numberWithDouble:p.x] forKey:kHLChartViewPointX];
                 [pointLayer setValue:[NSNumber numberWithDouble:p.y] forKey:kHLChartViewPointY];
                 [pointLayer setValue:[NSNumber numberWithDouble:points] forKey:kHLChartViewItemIndex];
-                [pointLayer setValue:[NSString stringWithFormat:@"%@:",[_dataSource chartView:self legendOfTitleInSection:index]] forKey:kHLChartViewItemName];
-                [pointLayer setValue:[NSString stringWithFormat:@"%@:",[_dataSource chartView:self scaleXTitleForChartView:points]] forKey:kHLChartViewScaleX];
+                [pointLayer setValue:[NSString stringWithFormat:@"%@:",pLegend] forKey:kHLChartViewItemName];
+                [pointLayer setValue:[NSString stringWithFormat:@"%@:",pXTitle] forKey:kHLChartViewScaleX];
                 pointLayer.name=[NSString stringWithFormat:@"point_%d",points];
                 [parentLayer addSublayer:pointLayer];
             }
@@ -455,11 +464,7 @@ static CGPathRef  CGPathCreateLine(CGPoint startPoint,CGPoint endPoint)
             [lineLayer setPosition:CGPointMake(0, 0)];
             [lineLayer setPath:path];
             [lineLayer setStrokeColor:[_dataSource chartView:self colorForChartView:index].CGColor];
-            if (isTouch) {
-                [lineLayer setLineWidth:1.0];
-            }else{
-                [lineLayer setLineWidth:1.0];
-            }
+            [lineLayer setLineWidth:1.0];
             lineLayer.name=[NSString stringWithFormat:@"line_%d",index];
             [lineLayer setValue:[NSNumber numberWithInt:1] forKey:kHLLineLayerLastIndex];
             
@@ -472,7 +477,6 @@ static CGPathRef  CGPathCreateLine(CGPoint startPoint,CGPoint endPoint)
         if (_isShowLegend) {
             [self drawLegend];
         }
-        //NSLog(@"reloadLineData");
         if (lineCount>0) {
             [_delegate chartDidLoadFinish:YES];
         }
@@ -597,6 +601,9 @@ static CGPathRef  CGPathCreateLine(CGPoint startPoint,CGPoint endPoint)
       
         NSUInteger lineCount=[_dataSource numberOfSectionsInChartView:self];
         
+        NSInteger   lineIndex=0;
+        NSInteger   barIndex=0;
+        
         for (int index=0;index<lineCount;index++){
             
             BOOL    isExist=false;
@@ -630,12 +637,10 @@ static CGPathRef  CGPathCreateLine(CGPoint startPoint,CGPoint endPoint)
             
             if ([type isEqualToString:@"line"]) {
                 UIColor *pColor=[_dataSource chartView:self colorForChartView:index];
-                
-   
                 CGMutablePathRef path=CGPathCreateMutable();
                 for (int points=0; points<numberOfRows; points++) {
                     CGFloat pValue=[self.dataSource chartView:self valueForChartViewAtIndex:points section:index type:type];
-                    CGPoint p=[self calculateForVertivalHeight:pValue withNumberOfSection:index atRowIndex:points];
+                    CGPoint p=[self calculateMixedLineForHeight:pValue withNumberOfSection:lineIndex atRowIndex:points];
                     if (points==0) {
                         CGPathMoveToPoint(path, NULL, p.x, p.y);
                     }
@@ -687,6 +692,7 @@ static CGPathRef  CGPathCreateLine(CGPoint startPoint,CGPoint endPoint)
                 
                 [parentLayer addSublayer:lineLayer];
                 
+                lineIndex++;
             }else{
               for (int points=0; points<numberOfRows; points++) {
                     CGFloat pValue=[self.dataSource chartView:self valueForChartViewAtIndex:points section:index type:type];
@@ -700,6 +706,7 @@ static CGPathRef  CGPathCreateLine(CGPoint startPoint,CGPoint endPoint)
                     [barLayer setValue:[NSNumber numberWithDouble:pValue] forKey:kHLChartViewItemValue];
                     [parentLayer addSublayer:barLayer];
                 }
+                barIndex++;
             }
             
             [CATransaction commit];
@@ -801,7 +808,7 @@ static CGPathRef  CGPathCreateLine(CGPoint startPoint,CGPoint endPoint)
     [textLayer setBackgroundColor:[UIColor clearColor].CGColor];
     [textLayer setString:value];
     CGSize size=[self sizeThatFitsString:value fontSize:fSize];
-    [textLayer setFrame:CGRectMake(0, rect.origin.y+(rect.size.height-size.height)/2, rect.size.width, size.height)];
+    [textLayer setFrame:CGRectMake(rect.origin.x, rect.origin.y+(rect.size.height-size.height)/2, rect.size.width, size.height)];
     [pLayer addSublayer:textLayer];
     return pLayer;
 }
@@ -815,10 +822,10 @@ static CGPathRef  CGPathCreateLine(CGPoint startPoint,CGPoint endPoint)
         textLayer.name=@"chartTitle";
         [self.layer addSublayer:textLayer];
         //Y 轴单位
-        CAShapeLayer *unitLayer=[self createDefaultTextLayer:@"单位:千" inRect:CGRectMake(5, 25, 50, 20) fontSize:10.0f];
-        [unitLayer setContentsScale:[UIScreen mainScreen].scale];
-        unitLayer.name=@"unitLayerY";
-        [self.layer addSublayer:unitLayer];
+//        CAShapeLayer *unitLayer=[self createDefaultTextLayer:@"单位:千" inRect:CGRectMake(5, 25, 50, 20) fontSize:10.0f];
+//        [unitLayer setContentsScale:[UIScreen mainScreen].scale];
+//        unitLayer.name=@"unitLayerY";
+//        [self.layer addSublayer:unitLayer];
         
         if (_chartStyle==HLChartViewStyleMixed) {
             CAShapeLayer *uLayer=[self createDefaultTextLayer:@"单位:%" inRect:CGRectMake(self.bounds.size.width-55, 25, 50, 20) fontSize:10.0f];
@@ -834,7 +841,7 @@ static CGPathRef  CGPathCreateLine(CGPoint startPoint,CGPoint endPoint)
     int xOffset=X_GRIDLINE_OFFSET;
     int yOffset=Y_GRIDLINE_OFFSET;
     int xPadding=5;
-    if (isTouch||_chartStyle==HLChartViewStyleMixed) {
+    if (isTouch) {
         xPadding=10;
         xOffset=X_GRIDLINE_OFFSET_TOUCH;
         yOffset=Y_GRIDLINE_OFFSET_TOUCH;
@@ -864,7 +871,6 @@ static CGPathRef  CGPathCreateLine(CGPoint startPoint,CGPoint endPoint)
     [horizontalLayer setPath:horizontalLine.CGPath];
     [horizontalLayer setStrokeColor:[UIColor lightGrayColor].CGColor];
     horizontalLayer.name=@"horizontalLayer";
-    
     
     if (_chartStyle==HLChartViewStyleMixed) {
         UIBezierPath *verticalLine=[UIBezierPath bezierPath];
@@ -897,26 +903,30 @@ static CGPathRef  CGPathCreateLine(CGPoint startPoint,CGPoint endPoint)
     [textLayer setString:@"0"];
     [textLayer setFrame:CGRectMake(0, self.bounds.size.height-yOffset-self.itemTitleHeight-_legendHeight-5, xOffset-12, size.height)];
     //点击时显示坐标标签
-    if (isTouch||_chartStyle==HLChartViewStyleMixed) {
+    if (isTouch) {
         [horizontalLayer addSublayer:textLayer];
     }
 
     [self.layer  addSublayer:horizontalLayer];
     
     float maxHeight=[self.dataSource maxVerticalValueInChartView:self filter:_hideDatas];
+    int gridLineStepValue=rint(maxHeight/NUM_OF_GRIDLINES);
+    
+    //Y-2
+    float maxYHeight=0;
+    int lineStepValue=0;
     if (_chartStyle==HLChartViewStyleMixed) {
         maxHeight=[self.dataSource maxVerticalValueInChartView:self filter:_hideDatas type:@"bar"];
+        maxYHeight=[self.dataSource maxVerticalValueInChartView:self filter:_hideDatas type:@"line"];
+        lineStepValue=rint(maxYHeight/NUM_OF_GRIDLINES);
     }
     float allowableMaxHeight=self.bounds.size.height-yOffset*2-_chartTitleHeight-self.itemTitleHeight-_legendHeight;
-    
-    int gridLineStepValue=rint(maxHeight/NUM_OF_GRIDLINES);
     
     for (int gridLine = 1; gridLine < NUM_OF_GRIDLINES+1; gridLine ++) {
         
         UIBezierPath *gridLinePath=[UIBezierPath bezierPath];
-       
-        [gridLinePath moveToPoint:CGPointMake(xOffset, self.bounds.size.height-yOffset-self.itemTitleHeight-_legendHeight-gridLine*rint(allowableMaxHeight/NUM_OF_GRIDLINES))];
-        [gridLinePath addLineToPoint:CGPointMake(self.bounds.size.width-xOffset, self.bounds.size.height-yOffset-self.itemTitleHeight-_legendHeight-gridLine*rint(allowableMaxHeight/NUM_OF_GRIDLINES))];
+        [gridLinePath moveToPoint:CGPointMake(xOffset-2, self.bounds.size.height-yOffset-self.itemTitleHeight-_legendHeight-gridLine*rint(allowableMaxHeight/NUM_OF_GRIDLINES))];
+        [gridLinePath addLineToPoint:CGPointMake(self.bounds.size.width-xOffset+2, self.bounds.size.height-yOffset-self.itemTitleHeight-_legendHeight-gridLine*rint(allowableMaxHeight/NUM_OF_GRIDLINES))];
         gridLinePath.lineWidth=0.5;
                
         CAShapeLayer *lineLayer=[CAShapeLayer layer];
@@ -941,23 +951,46 @@ static CGPathRef  CGPathCreateLine(CGPoint startPoint,CGPoint endPoint)
         }else{
             [textLayer setForegroundColor:[UIColor lightGrayColor].CGColor];
         }
-
         float yPoint = self.bounds.size.height-yOffset-self.itemTitleHeight-_legendHeight-gridLine*rint(allowableMaxHeight/NUM_OF_GRIDLINES)-5;
         CGSize size=[self sizeThatFitsString:[NSString stringWithFormat:@"%d",gridLineStepValue * gridLine] fontSize:_legendFontSize];
         CGFloat lValue=gridLine*gridLineStepValue;
-        if (lValue>1000) {
+        if (maxHeight>1000) {
             [textLayer setString:[NSString stringWithFormat:@"%@",[self getYLabelValue:(gridLineStepValue * gridLine)]]];
         }else{
-            [textLayer setString:[NSString stringWithFormat:@"%f",lValue]];
-            
+            [textLayer setString:[NSString stringWithFormat:@"%.1f",lValue]];
         }
         [textLayer setFrame:CGRectMake(0, yPoint, xOffset-2, size.height)];
        
-        if (isTouch||_chartStyle==HLChartViewStyleMixed) {
+        if (isTouch) {
             [lineLayer addSublayer:textLayer];
         }
+        //右边Y 轴 标签
+        if (_chartStyle==HLChartViewStyleMixed&&isTouch) {
+            CATextLayer *textLayer=[CATextLayer layer];
+            [textLayer setContentsScale:[UIScreen mainScreen].scale];
+            CGFontRef font=CGFontCreateWithFontName((__bridge CFStringRef)[[UIFont systemFontOfSize:_legendFontSize]fontName]);
+            [textLayer setFont:font];
+            CFRelease(font);
+            [textLayer setFontSize:_legendFontSize];
+            [textLayer setAlignmentMode:kCAAlignmentRight];
+            if (isTouch) {
+                [textLayer setForegroundColor:[UIColor blackColor].CGColor];
+            }else{
+                [textLayer setForegroundColor:[UIColor lightGrayColor].CGColor];
+            }
+            
+            float yPoint = self.bounds.size.height-yOffset-self.itemTitleHeight-_legendHeight-gridLine*rint(allowableMaxHeight/NUM_OF_GRIDLINES)-5;
+            CGSize size=[self sizeThatFitsString:[NSString stringWithFormat:@"%d%%",lineStepValue * gridLine] fontSize:_legendFontSize];
+            CGFloat lValue=gridLine*lineStepValue;
+            [textLayer setString:[NSString stringWithFormat:@"%.0f%%",lValue]];
+            [textLayer setFrame:CGRectMake(self.bounds.size.width-xOffset-5, yPoint, size.width, size.height)];
+            textLayer.name=[NSString stringWithFormat:@"hor_y2_%d",gridLine];
+            [lineLayer addSublayer:textLayer];
+        }
+        
         [self.layer addSublayer:lineLayer];
     }
+       
 }
 
 #pragma mark - Y坐标值
@@ -973,7 +1006,7 @@ static CGPathRef  CGPathCreateLine(CGPoint startPoint,CGPoint endPoint)
     int xOffset=X_GRIDLINE_OFFSET;
     int yOffset=Y_GRIDLINE_OFFSET;
     int xPadding=5;
-    if (isTouch||_chartStyle==HLChartViewStyleMixed) {
+    if (isTouch) {
         xPadding=10;
         xOffset=X_GRIDLINE_OFFSET_TOUCH;
         yOffset=Y_GRIDLINE_OFFSET_TOUCH;
@@ -1060,7 +1093,7 @@ static CGPathRef  CGPathCreateLine(CGPoint startPoint,CGPoint endPoint)
         [triangleLayer setPath:path];
        // [triangleLayer setPosition:CGPointMake(0,0)];
         
-        if (isTouch||_chartStyle==HLChartViewStyleMixed) {
+        if (isTouch) {
             if (_chartStyle==HLChartViewStyleBar) {
                 [lineLayer addSublayer:textLayer];
                 [parentLayer addSublayer:lineLayer];
@@ -1112,60 +1145,22 @@ static CGPathRef  CGPathCreateLine(CGPoint startPoint,CGPoint endPoint)
     float sectionWidth;
     float allowableMaxWidth = self.bounds.size.width-X_GRIDLINE_OFFSET*2;
     int section=[_dataSource numberOfSectionsInChartView:self];
-    //共几列
+    if (_chartStyle==HLChartViewStyleMixed) {
+        section=[_dataSource numberOfSectionsInChartView:self type:@"bar"];
+    }
     sectionWidth=allowableMaxWidth/section;
     CGRect rect;
-//    NSLog(@"%f",round(section/2.0));
     int col=ceil(section/2.0);
     int colWidth=floor(allowableMaxWidth/col);
     int offY=floor(self.bounds.size.height-_legendHeight);
     for (int i=0; i<2; i++) {
         for (int j=0; j<col; j++) {
-//            NSLog(@"%d col %d index %d %d %d %d 20",section,col,i*2+j,(10+j*colWidth),(offY+i*20),colWidth);
             if ((i*col+j)>=section) {
                 break;
             }
             [self addLegend:(i*col+j) offX:(10+j*colWidth) offY:(offY+i*20) width:colWidth height:20];
         }
     }
-    
-    
-//    for (int index=0; index<section; index++) {
-//        rect=CGRectMake(X_GRIDLINE_OFFSET+10*(index+1)+sectionWidth*(index+1)-sectionWidth, self.bounds.size.height-23, 20, 10);
-//        if (_chartStyle==HLChartViewStyleLine) {
-//            rect=CGRectMake(X_GRIDLINE_OFFSET+10*(index+1)+sectionWidth*(index+1)-sectionWidth, self.bounds.size.height-20, 20, 3);
-//        }
-//        
-//        CAShapeLayer *legendLayer=[CAShapeLayer layer];
-//        [legendLayer setContentsScale:[UIScreen mainScreen].scale];
-//        [legendLayer setFillColor:[_dataSource chartView:self colorForChartView:index].CGColor];
-//        [legendLayer setPosition:CGPointMake(0, 0)];
-//        [legendLayer setPath:[UIBezierPath bezierPathWithRect:rect].CGPath];
-//        [legendLayer setStrokeColor:NULL];
-//        
-//        legendLayer.name=[NSString stringWithFormat:@"legend_%d",index];
-//        
-//        //添加Legend 内容
-//        CATextLayer *textLayer=[CATextLayer layer];
-//        [textLayer setContentsScale:[UIScreen mainScreen].scale];
-//        CGFontRef font=CGFontCreateWithFontName((__bridge CFStringRef)[[UIFont systemFontOfSize:_legendFontSize]fontName]);
-//        [textLayer setFont:font];
-//        CFRelease(font);
-//        [textLayer setFontSize:_legendFontSize];
-//        [textLayer setAlignmentMode:kCAAlignmentCenter];
-//        [textLayer setForegroundColor:[UIColor blackColor].CGColor];
-//        
-//        CGSize size=[self sizeThatFitsString:[_dataSource chartView:self legendOfTitleInSection:index] fontSize:_legendFontSize];
-//        [textLayer setString:[_dataSource chartView:self legendOfTitleInSection:index]];
-//        [textLayer setFrame:CGRectMake(0, 0, size.width, size.height)];
-//        [textLayer setPosition:CGPointMake(X_GRIDLINE_OFFSET+(index+1)*10+sectionWidth*(index+1)-sectionWidth+45, self.bounds.size.height-16)];
-//        
-//        [legendLayer addSublayer:textLayer];
-//        
-//        [parentLayer addSublayer:legendLayer];
-//        
-//    }
-
 }
 
 -(void)addLegend:(int)index offX:(int)x offY:(int)y width:(int)w height:(int)h
@@ -1175,6 +1170,7 @@ static CGPathRef  CGPathCreateLine(CGPoint startPoint,CGPoint endPoint)
     UIBezierPath *touchPath=[UIBezierPath bezierPathWithRect:CGRectMake(x, y, w,h)];
     
     NSString  *legendString=[_dataSource chartView:self legendOfTitleInSection:index];
+    CGSize size=[self sizeThatFitsString:legendString fontSize:_legendFontSize];
     
     CAShapeLayer *touchLayer=[CAShapeLayer layer];
     [touchLayer setContentsScale:[UIScreen mainScreen].scale];
@@ -1217,7 +1213,6 @@ static CGPathRef  CGPathCreateLine(CGPoint startPoint,CGPoint endPoint)
     }
     
     textLayer.name=[NSString stringWithFormat:@"legend_text_%d_%@",index,[_dataSource chartView:self legendOfTitleInSection:index]];
-    CGSize size=[self sizeThatFitsString:legendString fontSize:_legendFontSize];
     [textLayer setString:legendString];
     [textLayer setFrame:CGRectMake(0, 0, size.width, size.height)];
     [textLayer setPosition:CGPointMake(x+30, y+8)];
@@ -1245,13 +1240,23 @@ static CGPathRef  CGPathCreateLine(CGPoint startPoint,CGPoint endPoint)
     }
     
     float maxPointHeight=[self.dataSource maxVerticalValueInChartView:self filter:_hideDatas];
+    if (_chartStyle==HLChartViewStyleMixed) {
+        maxPointHeight=[self.dataSource maxVerticalValueInChartView:self filter:_hideDatas type:@"line"];
+    }
     float allowableMaxHeight=self.bounds.size.height-yOffset*2-_chartTitleHeight-_legendHeight-self.itemTitleHeight;
    
     float maxPoints=[self.dataSource maxHorizontalValueInChartView:self]-1;
+    if (_chartStyle==HLChartViewStyleMixed) {
+        maxPoints=[self.dataSource maxHorizontalValueInChartView:self];
+    }
+    
     float pointDistance=(self.bounds.size.width-xOffset*2)/maxPoints;
     convertedPointHeight=(vHeight*allowableMaxHeight)/maxPointHeight;
     
     linePosition.x=index*pointDistance+xOffset;
+    if (_chartStyle==HLChartViewStyleMixed) {
+        linePosition.x=index*pointDistance+xOffset+pointDistance/2;
+    }
     linePosition.y=self.bounds.size.height-yOffset-self.itemTitleHeight-_legendHeight- convertedPointHeight;
 
 //    NSLog(@"calculatePointForHeight s:%d i:%d v:%f x:%f,y:%f",section,index,convertedPointHeight,linePosition.x,linePosition.y);
@@ -1276,9 +1281,16 @@ static CGPathRef  CGPathCreateLine(CGPoint startPoint,CGPoint endPoint)
     float sectionWidth;
     float mRows=[_dataSource maxHorizontalValueInChartView:self];
     NSInteger  sec=[_dataSource numberOfSectionsInChartView:self];
+    if (_chartStyle==HLChartViewStyleMixed) {
+        sec=[_dataSource numberOfSectionsInChartView:self type:@"bar"];
+    }
     
 	//Calculating bar height
 	float maxBarHeight = [self.dataSource maxVerticalValueInChartView:self filter:_hideDatas];
+    if (_chartStyle==HLChartViewStyleMixed) {
+        maxBarHeight=[self.dataSource maxVerticalValueInChartView:self filter:_hideDatas type:@"bar"];
+    }
+    
 	float allowableMaxHeight = self.bounds.size.height - yOffset * 2-_chartTitleHeight - _legendHeight - self.itemTitleHeight;
 	convertedBarHeight = (barHeight * allowableMaxHeight) / maxBarHeight;
     
@@ -1289,7 +1301,7 @@ static CGPathRef  CGPathCreateLine(CGPoint startPoint,CGPoint endPoint)
     //每列几组
 	barWidth = sectionWidth /sec;
     
-	barPosition.y = self.bounds.size.height - yOffset - self.itemTitleHeight - _legendHeight;
+	barPosition.y = self.bounds.size.height - yOffset - self.itemTitleHeight - _legendHeight-1;
     float sepEmpt=0;
     sepEmpt=index*10;
 	barPosition.x = xOffset + 5 + barWidth * section+index*sectionWidth+sepEmpt;
@@ -1299,6 +1311,50 @@ static CGPathRef  CGPathCreateLine(CGPoint startPoint,CGPoint endPoint)
     
 	return barRect;
 }
+
+#pragma mark - 计算右边线图位置
+-(CGPoint)calculateMixedLineForHeight:(float)vHeight withNumberOfSection:(NSInteger)section atRowIndex:(NSInteger)index
+{
+
+    int xOffset=X_GRIDLINE_OFFSET_TOUCH;
+    int yOffset=Y_GRIDLINE_OFFSET_TOUCH;
+    if (!isTouch) {
+        _chartTitleHeight=0;
+        self.itemTitleHeight=0;
+        xOffset=X_GRIDLINE_OFFSET;
+        yOffset=Y_GRIDLINE_OFFSET;
+    }
+    
+    float convertedLineHeight;
+	CGPoint linePosition;
+	float barWidth;
+    float sectionWidth;
+    float mRows=[_dataSource maxHorizontalValueInChartView:self];
+    NSInteger  sec=[_dataSource numberOfSectionsInChartView:self type:@"line"];
+    
+	//Calculating bar height
+	float maxLineHeight = [self.dataSource maxVerticalValueInChartView:self filter:_hideDatas type:@"line"];
+    
+	float allowableMaxHeight = self.bounds.size.height - yOffset * 2-_chartTitleHeight - _legendHeight - self.itemTitleHeight;
+	convertedLineHeight = (vHeight * allowableMaxHeight) / maxLineHeight;
+    
+	//calculataing bar width
+	float allowableMaxWidth = self.bounds.size.width - xOffset * 2 - mRows*10;
+    //共几列
+    sectionWidth=allowableMaxWidth/mRows;
+    //每列几组
+	barWidth = sectionWidth /sec;
+    
+	float sepEmpt=0;
+    sepEmpt=index*10;
+	linePosition.x = xOffset + 5 + barWidth * section+index*sectionWidth+sepEmpt;
+    linePosition.y=self.bounds.size.height-yOffset-self.itemTitleHeight-_legendHeight- convertedLineHeight;
+
+//    NSLog(@"calculateMixedForLineItemHeight %d,%d==%f,%f",section,index,linePosition.x,linePosition.y);
+    
+	return linePosition;
+}
+
 -(CAShapeLayer*)createBarLayerWithColor:(UIColor *)color itemRect:(CGRect)rect
 {
     CAShapeLayer *barLayer=[CAShapeLayer layer];
@@ -1688,18 +1744,19 @@ void sort(double array[],int zz,int yy)
                 CAShapeLayer   *pLayer=(CAShapeLayer*)[_sortLayers objectAtIndex:index];
                 x=[[pLayer valueForKey:kHLChartViewPointX] floatValue];
                 y=[[pLayer valueForKey:kHLChartViewPointY] floatValue];
-                rectY=yH*index+25+Y_GRIDLINE_OFFSET;
-//                rect=CGRectMake(x+20, y-20, 100, 25);
-                rect=CGRectMake(x+20, rectY, 100, 20);
                 
-//                NSLog(@"当前点 %d   %@ x:%f  y:%f",index,[pLayer valueForKey:kHLChartViewItemName],x,y);
+                CGSize size=[self sizeThatFitsString:[NSString stringWithFormat:@"%@",[pLayer valueForKey:kHLChartViewItemNameValue]] fontSize:10];
+                CGFloat rectWidth=100;
+                
+                rectY=yH*index+25+Y_GRIDLINE_OFFSET;
+                rect=CGRectMake(x+20, rectY, rectWidth, 20);
+                
                 if (x>self.frame.size.width/2) {
-//                    rect=CGRectMake(x-120, y-20, 100, 25);
-                    rect=CGRectMake(x-120, rectY, 100, 20);
+                    rect=CGRectMake(x-120, rectY, rectWidth, 20);
                 }
                 
                 if (lastHeight>y-20) {
-                    rect=CGRectMake(rect.origin.x, lastHeight+5, 100, 20);
+                    rect=CGRectMake(rect.origin.x, lastHeight+5, rectWidth, 20);
                 }
                 
                 CGMutablePathRef path=CGPathCreateMutable();
@@ -1719,8 +1776,7 @@ void sort(double array[],int zz,int yy)
                 [triangleLayer setPosition:CGPointMake(0,0)];
                 
                 
-                UIBezierPath *rectPath;
-                rectPath=[UIBezierPath bezierPathWithRoundedRect:rect cornerRadius:6.0];
+                UIBezierPath *rectPath=[UIBezierPath bezierPathWithRoundedRect:rect cornerRadius:6.0];
                 
                 CAShapeLayer *iLayer=[CAShapeLayer layer];
                 [iLayer setContentsScale:[UIScreen mainScreen].scale];
@@ -1731,17 +1787,17 @@ void sort(double array[],int zz,int yy)
                 
                 CATextLayer *textLayer=[CATextLayer layer];
                 [textLayer setContentsScale:[UIScreen mainScreen].scale];
-                CGFontRef font=CGFontCreateWithFontName((__bridge CFStringRef)[[UIFont systemFontOfSize:12.0]fontName]);
+                CGFontRef font=CGFontCreateWithFontName((__bridge CFStringRef)[[UIFont systemFontOfSize:10.0]fontName]);
                 [textLayer setFont:font];
                 CFRelease(font);
-                [textLayer setFontSize:12.0];
+                [textLayer setFontSize:10.0];
                 [textLayer setAlignmentMode:kCAAlignmentLeft];
                 [textLayer setForegroundColor:[UIColor whiteColor].CGColor];
                 
-                CGSize size=[self sizeThatFitsString:[NSString stringWithFormat:@"%@%@",[pLayer valueForKey:kHLChartViewItemName],[pLayer valueForKey:kHLChartViewItemValue]] fontSize:12];
-                [textLayer setString:[NSString stringWithFormat:@"%@%@",[pLayer valueForKey:kHLChartViewItemName],[pLayer valueForKey:kHLChartViewItemValue]]];
-                [textLayer setFrame:CGRectMake(0, 0, size.width, size.height)];
-                [textLayer setPosition:CGPointMake(rect.origin.x+rect.size.width/2,rect.origin.y+rect.size.height/2+4)];
+                [textLayer setString:[NSString stringWithFormat:@"%@",[pLayer valueForKey:kHLChartViewItemNameValue]]];
+                NSLog(@"+++++++++++++++++++++++ %f,%f  === %f  %f",size.width,size.height,rect.size.width,rect.size.height);
+                [textLayer setFrame:CGRectMake(rect.origin.x+10, rect.origin.y+4, size.width, size.height)];
+//                [textLayer setPosition:CGPointMake(rect.origin.x+rect.size.width/2,rect.origin.y+rect.size.height/2+4)];
                 [iLayer addSublayer:textLayer];
                 
                 [iLayer addSublayer:triangleLayer];
