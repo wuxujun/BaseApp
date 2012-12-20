@@ -19,9 +19,7 @@
     ASIHTTPRequest      *_request;
     OverlayView         *overlayView;
     
-    
     int             curRecord;
-   
 }
 @property (nonatomic,retain)NSMutableArray     *dataArray;
 @property (nonatomic,retain)NSMutableArray     *headerArray;

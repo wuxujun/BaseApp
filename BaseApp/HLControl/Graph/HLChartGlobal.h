@@ -9,8 +9,8 @@
 #ifndef GrpCust_HLChartGlobal_h
 #define GrpCust_HLChartGlobal_h
 
-#define X_GRIDLINE_OFFSET 10
-#define Y_GRIDLINE_OFFSET 10
+#define X_GRIDLINE_OFFSET 30
+#define Y_GRIDLINE_OFFSET 25
 #define NUM_OF_GRIDLINES 5
 #define Y_GRIDLINE_LEGEND_WIDTH (X_GRIDLINE_OFFSET-5)
 
@@ -23,6 +23,9 @@
 #define BAR_ITEM_CORNER_RADIUS_OFFSET 6
 
 #define CHART_TITLE_HEIGHT 30
+#define SCALE_X_TITLE_HEIGHT 10
+
+#define Y_FONT_SIZE         10
 
 
 

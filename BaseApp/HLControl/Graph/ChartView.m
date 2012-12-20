@@ -186,7 +186,7 @@ static NSInteger sortByMaxValue(id a,id b,void *context){
         }
     }
     _chartView.frame=self.frame;
-    NSLog(@"%@:%@  w:%f  h:%f   %f  %f",[self class],NSStringFromSelector(_cmd),_chartView.frame.size.width,_chartView.frame.size.height,self.frame.size.width,self.frame.size.height);
+//    NSLog(@"%@:%@  w:%f  h:%f   %f  %f",[self class],NSStringFromSelector(_cmd),_chartView.frame.size.width,_chartView.frame.size.height,self.frame.size.width,self.frame.size.height);
 
     [self reloadData];
 }
@@ -266,7 +266,7 @@ static NSInteger sortByMaxValue(id a,id b,void *context){
 {
     [self filterValues:aDict];
     if ([_allValues count]>0) {
-        return [[_allValues objectAtIndex:0]floatValue ]+5;
+        return ceilf([[_allValues objectAtIndex:0]floatValue ]);
     }
 
     return 50.0;
@@ -276,7 +276,7 @@ static NSInteger sortByMaxValue(id a,id b,void *context){
 {
     [self filterValues:aDict type:type];
     if ([_allValues count]>0) {
-        return [[_allValues objectAtIndex:0]floatValue ]+5;
+        return ceilf([[_allValues objectAtIndex:0]floatValue ]);
     }
     return 50.0;
 }
@@ -286,10 +286,26 @@ static NSInteger sortByMaxValue(id a,id b,void *context){
     [self filterValues:aDict];
     if ([_allValues count]>0) {
         NSInteger num=[_allValues count];
-        return [[_allValues objectAtIndex:num-1] floatValue];
+        float value=[[_allValues objectAtIndex:num-1] floatValue];
+        if(value<0){
+            return floor(value);
+        }
+        return ceilf(value);
     }
     return 0.0;
 }
+
+-(float)minVerticalValueInChartView:(HLChartView *)chartView filter:(NSMutableArray*)aDict type:(NSString *)type
+{
+    [self filterValues:aDict type:type];
+    if ([_allValues count]>0) {
+        NSInteger num=[_allValues count];
+        return ceilf([[_allValues objectAtIndex:num-1] floatValue]);
+    }
+    return 0.0;
+}
+
+
 
 -(float)maxHorizontalValueInChartView:(HLChartView *)chartView
 {
@@ -301,7 +317,7 @@ static NSInteger sortByMaxValue(id a,id b,void *context){
     NSDictionary *dic=(NSDictionary*)[slices objectAtIndex:section];
     if ([dic isKindOfClass:[NSDictionary class]]) {
         NSArray *vs=(NSArray*)[dic objectForKey:@"values"];
-        NSLog(@"valueForChartViewAtIndex %d  %d  %f",index,section,[[vs objectAtIndex:index] floatValue]);
+//        NSLog(@"valueForChartViewAtIndex %d  %d  %f",index,section,[[vs objectAtIndex:index] floatValue]);
         return [[vs objectAtIndex:index] floatValue];
     }
     return 0.0;
@@ -312,7 +328,7 @@ static NSInteger sortByMaxValue(id a,id b,void *context){
     NSDictionary *dic=(NSDictionary*)[slices objectAtIndex:section];
     if ([dic isKindOfClass:[NSDictionary class]]) {
         NSArray *vs=(NSArray*)[dic objectForKey:@"values2"];
-        NSLog(@"value2ForChartViewAtIndex %d  %d  %f",index,section,[[vs objectAtIndex:index] floatValue]);
+//        NSLog(@"value2ForChartViewAtIndex %d  %d  %f",index,section,[[vs objectAtIndex:index] floatValue]);
         return [[vs objectAtIndex:index] floatValue];
     }
     return 0.0;

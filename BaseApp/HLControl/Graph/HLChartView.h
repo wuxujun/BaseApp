@@ -23,17 +23,21 @@ typedef enum{
 @protocol HLChartViewDelegate;
 
 @interface HLChartView : UIView{
+    
+    NSInteger           titleHeight;
+    NSInteger           legendHeight;
+    
 }
-
-
 @property (nonatomic,strong)id<HLChartViewDelegate> delegate;
 @property (nonatomic,strong)id<HLChartViewDataSource> dataSource;
-@property (nonatomic,assign)NSInteger itemTitleHeight;
+@property (nonatomic,assign)NSInteger titleHeight;
+@property (nonatomic,assign)NSInteger legendHeight;
+
 @property (nonatomic,assign)CGFloat animationSpeed;
 @property (nonatomic,strong)NSString *title;
 @property (nonatomic,assign)BOOL    isTouch;
 @property (nonatomic,assign)BOOL    isShowLegend;
-@property (nonatomic,assign)CGFloat legendHeight;
+
 @property (nonatomic,assign)HLChartViewStyle chartStyle;
 
 -(id)initWithFrame:(CGRect)frame style:(HLChartViewStyle)style;
@@ -57,7 +61,6 @@ typedef enum{
 //每条记录 类型  值为  line  或bar
 -(NSString*)chartView:(HLChartView*)chartView typeForChartView:(NSInteger)index;
 
-
 -(float)maxVerticalValueInChartView:(HLChartView*)chartView filter:(NSMutableArray*)aDict;
 //根据类型取最大值
 -(NSInteger)numberOfSectionsInChartView:(HLChartView*)chartView type:(NSString*)type;
@@ -66,6 +69,8 @@ typedef enum{
 
 
 -(float)minVerticalValueInChartView:(HLChartView*)chartView filter:(NSMutableArray*)aDict;
+-(float)minVerticalValueInChartView:(HLChartView*)chartView filter:(NSMutableArray*)aDict type:(NSString*)type;
+
 -(float)maxHorizontalValueInChartView:(HLChartView*)chartView;
 
 
