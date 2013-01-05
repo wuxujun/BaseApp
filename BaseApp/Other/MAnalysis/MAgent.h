@@ -37,4 +37,6 @@ typedef enum{
 +(void)setOnLineConfig:(BOOL)isOnLineConfig;
 +(void)setIsLogEnabled:(BOOL)isLogEnabled;
 
++(void)pushUUID;
+
 @end

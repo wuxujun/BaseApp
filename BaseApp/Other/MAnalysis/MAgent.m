@@ -911,6 +911,25 @@ uncaughtExceptionHandler(NSException *exception) {
     return jailbroken;
 }
 
+
++(void)pushUUID
+{
+    [[MAgent getInstance]pushUuid];
+}
+
+-(void)pushUuid
+{
+    @autoreleasepool {
+        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+        NSString *uuid = [defaults objectForKey:@"uuid"];
+        MCommonReturn *ret = [MAgentRequest postUUID:self.appKey uuid:uuid];
+        if(ret.flag<0)
+        {
+            NSLog(@"上传失败");
+        }
+    }
+}
+
 +(void)setOnLineConfig:(BOOL)isOnlineConfig
 {
     [MAgent getInstance].isOnLineConfig = isOnlineConfig;

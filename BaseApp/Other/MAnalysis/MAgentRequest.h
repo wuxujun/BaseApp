@@ -32,4 +32,7 @@
 
 +(MConfigPreference*)getOnlineConfig:(NSString*)appKey;
 
++(MCommonReturn*)postUUID:(NSString*)appKey uuid:(NSString*)uuid;
+
+
 @end

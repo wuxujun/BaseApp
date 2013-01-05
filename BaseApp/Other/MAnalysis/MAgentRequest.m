@@ -246,4 +246,25 @@
     return ret;
 }
 
++(MCommonReturn*)postUUID:(NSString *)appKey uuid:(NSString *)uuid
+{
+    NSString* url = [NSString stringWithFormat:@"%@%@",[MGlobal getBaseURL],@"/ums/postUUID"];
+    
+    MCommonReturn *ret = [[MCommonReturn alloc] init];
+    NSMutableDictionary *requestDictionary = [[NSMutableDictionary alloc] init];
+    [requestDictionary setObject:uuid forKey:@"uuid"];
+    [requestDictionary setObject:appKey forKey:@"appkey"];
+    
+    NSString *retString = [self sendData:url data:requestDictionary];
+    SBJsonParser    *parser     = [[SBJsonParser alloc] init];
+    id  returnObject = [parser objectWithString:retString];
+    NSDictionary * retDictionary= nil;
+    if ([returnObject isKindOfClass:[NSDictionary class]]) {
+        retDictionary=(NSDictionary*)returnObject;
+    }
+    ret.flag = [[retDictionary objectForKey:@"flag" ] intValue];
+    ret.msg = [retDictionary objectForKey:@"msg"];
+    return ret;
+}
+
 @end

@@ -11,4 +11,6 @@
 #ifdef __OBJC__
     #import <UIKit/UIKit.h>
     #import <Foundation/Foundation.h>
+    #import "ColorHelper.h"
+    #import "HGloble.h"
 #endif
