@@ -7,12 +7,16 @@
 //
 
 #import "MusterAppDelegate.h"
+#import "ExceptionHandler.h"
 
 @implementation MusterAppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
     // Override point for customization after application launch.
+    
+    [ExceptionHandler setDefaultHandler];
+    
     return YES;
 }
 							
